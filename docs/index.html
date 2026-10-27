@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ETL PNAD Covid-19</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: coluna de leitura única, cabeçalho fixo com navegação por seção, blocos técnicos em "cartões de terminal".
+   Identidade: fundo #07070C do dhionathanjobim.com.br + acentos do tema tokyonight. Troque aqui para ajustar. */
+:root {
+  --bg: #07070c;
+  --surface: #0f0f18;
+  --surface-2: #161624;
+  --line: #24243a;
+  --fg: #e4e4f0;
+  --muted: #8f8fae;
+  --accent: #7aa2f7;
+  --accent-2: #bb9af7;
+  --ok: #9ece6a;
+  --warn: #e0af68;
+  --err: #f7768e;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  --radius: 10px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f6f6fb; --surface: #ffffff; --surface-2: #eeeef7; --line: #d9d9e8;
+    --fg: #15151f; --muted: #5c5c78; --accent: #2e5cd6; --accent-2: #7a3fd1;
+    --ok: #3f7d12; --warn: #9a6200; --err: #c2264a; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f6f6fb; --surface: #ffffff; --surface-2: #eeeef7; --line: #d9d9e8;
+  --fg: #15151f; --muted: #5c5c78; --accent: #2e5cd6; --accent-2: #7a3fd1;
+  --ok: #3f7d12; --warn: #9a6200; --err: #c2264a; color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: calc(64px + env(safe-area-inset-top, 0px)); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.6;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--bg);
+}
+.wrap {
+  max-width: 920px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* ---------- Cabeçalho ---------- */
+.topo {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.topo .wrap { display: flex; align-items: center; gap: 16px; padding-block: 12px; }
+.marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--fg); flex-shrink: 0; }
+.monograma {
+  width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 15px; letter-spacing: -0.02em;
+  color: var(--bg); background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+.marca small { display: block; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.2; }
+.marca strong { display: block; font-family: var(--font-display); font-weight: 600; font-size: 15px; line-height: 1.2; }
+nav.secoes { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; margin-left: auto; min-width: 0; }
+nav.secoes::-webkit-scrollbar { display: none; }
+nav.secoes a {
+  color: var(--muted); text-decoration: none; font-size: 14px; padding: 6px 10px; border-radius: 6px; white-space: nowrap;
+}
+nav.secoes a:hover, nav.secoes a:focus-visible { color: var(--fg); background: var(--surface-2); outline: none; }
+
+/* ---------- Abertura ---------- */
+.abertura { padding-block: 56px 24px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; }
+h1 {
+  font-family: var(--font-display); font-weight: 800; letter-spacing: -0.03em;
+  font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: 1.05; margin: 10px 0 16px; text-wrap: balance;
+}
+h1 em { font-style: normal; background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { color: var(--muted); font-size: 1.08rem; max-width: 62ch; margin: 0; }
+.fatos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.fatos span {
+  font-family: var(--font-mono); font-size: 12.5px; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--muted); background: var(--surface);
+}
+.fatos b { color: var(--fg); font-weight: 600; }
+
+/* ---------- Seções ---------- */
+section { padding-block: 40px; border-top: 1px solid var(--line); }
+h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; letter-spacing: -0.02em;
+  margin: 0 0 6px; text-wrap: balance;
+}
+h3 { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; margin: 26px 0 8px; }
+.sub { color: var(--muted); margin: 0 0 22px; max-width: 65ch; }
+p { max-width: 68ch; }
+code {
+  font-family: var(--font-mono); font-size: 0.88em; padding: 1px 6px; border-radius: 5px;
+  background: var(--surface-2); color: var(--accent-2); overflow-wrap: anywhere;
+}
+a { color: var(--accent); }
+
+/* ---------- Diagrama ---------- */
+.diagrama { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); padding: 18px; }
+.diagrama svg { display: block; min-width: 720px; width: 100%; height: auto; }
+.diagrama .caixa { fill: var(--surface-2); stroke: var(--line); }
+.diagrama .caixa-banco { fill: var(--surface-2); stroke: var(--accent); }
+.diagrama .caixa-log { fill: var(--surface-2); stroke: var(--err); stroke-dasharray: 4 3; }
+.diagrama .t { fill: var(--fg); font-family: var(--font-body); font-size: 13px; font-weight: 600; }
+.diagrama .t2 { fill: var(--muted); font-family: var(--font-mono); font-size: 10.5px; }
+.diagrama .seta { stroke: var(--accent); stroke-width: 1.6; fill: none; }
+.diagrama .seta-log { stroke: var(--err); stroke-width: 1.2; fill: none; stroke-dasharray: 3 3; opacity: 0.75; }
+.diagrama .ponta { fill: var(--accent); }
+.diagrama .ponta-log { fill: var(--err); }
+
+/* ---------- Tabelas ---------- */
+.tabela { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); font-weight: 600; background: var(--surface); }
+tr:last-child td { border-bottom: 0; }
+td.mono, td code { font-family: var(--font-mono); font-size: 13px; }
+td.mono { color: var(--accent-2); white-space: nowrap; }
+
+/* ---------- Estrutura de pastas ---------- */
+.arvore {
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.75; white-space: pre; overflow-x: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; margin: 0;
+}
+.arvore .d { color: var(--accent); }
+.arvore .c { color: var(--muted); }
+
+/* ---------- Estrela ---------- */
+.estrela { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.tab-dw { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; min-width: 0; }
+.tab-dw.fato { grid-column: 2; grid-row: 1 / span 2; border-color: var(--accent); }
+.tab-dw header { padding: 9px 12px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.tab-dw.fato header { color: var(--accent); }
+.tab-dw ul { list-style: none; margin: 0; padding: 8px 12px 10px; font-family: var(--font-mono); font-size: 12.5px; }
+.tab-dw li { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.tab-dw li span:last-child { color: var(--muted); }
+.tab-dw li.pk span:first-child { color: var(--accent-2); }
+.tab-dw li.extra span:first-child::after { content: " +"; color: var(--warn); }
+.legenda { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.legenda b { color: var(--warn); }
+@media (max-width: 640px) {
+  .estrela { grid-template-columns: 1fr; }
+  .tab-dw.fato { grid-column: auto; grid-row: auto; order: -1; }
+}
+
+/* ---------- Etapas de execução ---------- */
+.passos { display: grid; gap: 14px; counter-reset: passo; padding: 0; margin: 0; list-style: none; }
+.passos li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; align-items: start; }
+.passos li::before {
+  counter-increment: passo; content: counter(passo);
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+  border: 1px solid var(--accent); color: var(--accent);
+}
+.passos h4 { margin: 3px 0 6px; font-size: 15.5px; font-weight: 600; }
+.passos p { margin: 0 0 8px; color: var(--muted); font-size: 15px; }
+.terminal { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.terminal pre {
+  margin: 0; padding: 12px 84px 12px 14px; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.6; color: var(--fg);
+}
+.terminal pre .c { color: var(--muted); }
+.copiar {
+  position: absolute; top: 8px; right: 8px; font: 600 12px var(--font-body);
+  color: var(--muted); background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 4px 9px; cursor: pointer;
+}
+.copiar:hover, .copiar:focus-visible { color: var(--fg); border-color: var(--accent); outline: none; }
+.abas { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); margin-bottom: 16px; }
+.abas button {
+  font: 600 13px var(--font-body); color: var(--muted); background: none; border: 0; border-radius: 6px;
+  padding: 6px 12px; cursor: pointer;
+}
+.abas button[aria-selected="true"] { background: var(--surface-2); color: var(--fg); }
+.abas button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- Status do log ---------- */
+.status { display: flex; flex-wrap: wrap; gap: 10px; margin: 6px 0 4px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12.5px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.pill.ok i { background: var(--ok); } .pill.warn i { background: var(--warn); } .pill.err i { background: var(--err); }
+.pill span { color: var(--muted); font-family: var(--font-body); }
+
+/* ---------- Evidências ---------- */
+.checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.checklist li { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-bottom: 1px dashed var(--line); }
+.checklist li:last-child { border-bottom: 0; }
+.checklist .cod { font-family: var(--font-mono); font-size: 12.5px; color: var(--accent); padding-top: 2px; }
+.checklist .o { color: var(--muted); font-size: 14px; display: block; }
+
+.decisoes { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.decisoes div { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; background: var(--surface); min-width: 0; }
+.decisoes h4 { margin: 0 0 6px; font-size: 15px; }
+.decisoes p { margin: 0; color: var(--muted); font-size: 14.5px; }
+@media (max-width: 640px) { .decisoes { grid-template-columns: 1fr; } }
+
+footer { border-top: 1px solid var(--line); padding-block: 28px 40px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="wrap">
+    <a class="marca" href="#inicio">
+      <span class="monograma" aria-hidden="true">DJ</span>
+      <span><small>Engenharia de Dados</small><strong>PNAD Covid-19</strong></span>
+    </a>
+    <nav class="secoes" aria-label="Seções">
+      <a href="#arquitetura">Arquitetura</a>
+      <a href="#pastas">Pastas</a>
+      <a href="#modelo">Modelo</a>
+      <a href="#rotinas">Rotinas</a>
+      <a href="#executar">Executar</a>
+      <a href="#evidencias">Evidências</a>
+    </nav>
+  </div>
+</header>
+
+<main id="inicio">
+  <div class="wrap abertura">
+    <div class="eyebrow">Atividade prática · MS SQL Server Operação · PUC Minas</div>
+    <h1>Dos microdados do IBGE a um <em>Data Warehouse</em> em SQL Server</h1>
+    <p class="lead">Carga dos microdados da PNAD Covid-19 (maio a novembro de 2020) com extração do CSV, validação linha a linha, staging, normalização e modelo estrela. Cada etapa grava log com linhas lidas, linhas gravadas e status.</p>
+    <div class="fatos">
+      <span><b>7</b> arquivos mensais</span>
+      <span><b>23</b> colunas de origem</span>
+      <span><b>3</b> dimensões + <b>1</b> fato</span>
+      <span><b>20</b> functions</span>
+      <span><b>9</b> procedures</span>
+      <span>SQL Server <b>2022</b> via Docker</span>
+    </div>
+  </div>
+
+  <section id="arquitetura">
+    <div class="wrap">
+      <h2>Arquitetura</h2>
+      <p class="sub">Tudo roda dentro do SQL Server. O staging do enunciado, desenhado no Oracle, ficou no schema <code>staging</code> do mesmo banco.</p>
+      <div class="diagrama" role="img" aria-label="Fluxo: CSV do IBGE, leitura e validação, staging, leitura do staging, transformação e normalização, Data Warehouse. Todas as etapas gravam em auditoria.log_execucao.">
+        <svg viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path class="ponta" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="pl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path class="ponta-log" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <rect class="caixa" x="10" y="40" width="120" height="64" rx="10"/>
+          <text class="t" x="70" y="68" text-anchor="middle">CSV IBGE</text>
+          <text class="t2" x="70" y="86" text-anchor="middle">PNAD_COVID_*.csv</text>
+
+          <rect class="caixa" x="160" y="40" width="130" height="64" rx="10"/>
+          <text class="t" x="225" y="68" text-anchor="middle">Leitura e validação</text>
+          <text class="t2" x="225" y="86" text-anchor="middle">usp_carregar</text>
+
+          <rect class="caixa-banco" x="320" y="40" width="110" height="64" rx="10"/>
+          <text class="t" x="375" y="68" text-anchor="middle">Staging</text>
+          <text class="t2" x="375" y="86" text-anchor="middle">schema staging</text>
+
+          <rect class="caixa" x="460" y="40" width="130" height="64" rx="10"/>
+          <text class="t" x="525" y="62" text-anchor="middle">Transformação e</text>
+          <text class="t" x="525" y="78" text-anchor="middle">normalização</text>
+          <text class="t2" x="525" y="94" text-anchor="middle">functions etl.fn_*</text>
+
+          <rect class="caixa" x="620" y="40" width="120" height="64" rx="10"/>
+          <text class="t" x="680" y="68" text-anchor="middle">Dimensões e fato</text>
+          <text class="t2" x="680" y="86" text-anchor="middle">usp_carregar_dim_*</text>
+
+          <rect class="caixa-banco" x="770" y="40" width="120" height="64" rx="10"/>
+          <text class="t" x="830" y="68" text-anchor="middle">Data Warehouse</text>
+          <text class="t2" x="830" y="86" text-anchor="middle">schema dw</text>
+
+          <path class="seta" d="M130 72H158" marker-end="url(#p)"/>
+          <path class="seta" d="M290 72H318" marker-end="url(#p)"/>
+          <path class="seta" d="M430 72H458" marker-end="url(#p)"/>
+          <path class="seta" d="M590 72H618" marker-end="url(#p)"/>
+          <path class="seta" d="M740 72H768" marker-end="url(#p)"/>
+
+          <rect class="caixa-log" x="300" y="170" width="300" height="48" rx="10"/>
+          <text class="t" x="450" y="191" text-anchor="middle">auditoria.log_execucao</text>
+          <text class="t2" x="450" y="208" text-anchor="middle">lidas · gravadas · status · observação</text>
+
+          <path class="seta-log" d="M225 104V194H298" marker-end="url(#pl)"/>
+          <path class="seta-log" d="M375 104V168" marker-end="url(#pl)"/>
+          <path class="seta-log" d="M680 104V194H602" marker-end="url(#pl)"/>
+          <rect class="caixa-log" x="130" y="128" width="150" height="26" rx="6"/>
+          <text class="t2" x="205" y="145" text-anchor="middle">pnad_covid_rejeitado</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section id="pastas">
+    <div class="wrap">
+      <h2>Estrutura do repositório</h2>
+      <p class="sub">Os scripts SQL são numerados na ordem de execução. Cada pasta tem uma responsabilidade.</p>
+<pre class="arvore"><span class="d">pnad-covid-etl/</span>
+├── docker-compose.yml        <span class="c"># SQL Server 2022 Developer</span>
+├── <span class="d">dados/</span>                    <span class="c"># CSVs do IBGE (fora do git)</span>
+├── <span class="d">scripts/</span>                  <span class="c"># baixar, instalar, executar e testar (.sh e .ps1)</span>
+├── <span class="d">sql/</span>
+│   ├── <span class="d">00_setup/</span>             <span class="c"># banco e schemas</span>
+│   ├── <span class="d">01_auditoria/</span>         <span class="c"># tabela e procedures de log</span>
+│   ├── <span class="d">02_functions/</span>         <span class="c"># normalização textual e mapeamentos</span>
+│   ├── <span class="d">03_staging/</span>           <span class="c"># tabelas de staging e usp_carregar</span>
+│   ├── <span class="d">04_dw/</span>                <span class="c"># dimensões e fato</span>
+│   ├── <span class="d">05_procedures_dw/</span>     <span class="c"># cargas do DW</span>
+│   ├── <span class="d">06_orquestracao/</span>      <span class="c"># pipeline e limpeza</span>
+│   └── <span class="d">07_consultas/</span>         <span class="c"># evidências e análises</span>
+├── <span class="d">tests/</span>                    <span class="c"># CSV de teste e 28 verificações</span>
+└── <span class="d">docs/</span>                     <span class="c"># esta página e roteiro de prints</span></pre>
+    </div>
+  </section>
+
+  <section id="modelo">
+    <div class="wrap">
+      <h2>Modelo de dados</h2>
+      <p class="sub">A staging lê as colunas do CSV pelo nome do cabeçalho, através do de-para em <code>staging.mapa_coluna_csv</code>. Assim a carga aguenta meses em que o IBGE incluiu perguntas e as posições mudaram.</p>
+
+      <h3>De-para da staging</h3>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Staging</th><th>CSV IBGE</th><th>Conteúdo</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">NU_ANO</td><td class="mono">Ano</td><td>Ano de referência</td></tr>
+            <tr><td class="mono">NU_MES</td><td class="mono">V1013</td><td>Mês da pesquisa</td></tr>
+            <tr><td class="mono">UF</td><td class="mono">UF</td><td>Unidade da Federação</td></tr>
+            <tr><td class="mono">CO_MUNICIPIO</td><td class="mono">CAPITAL</td><td>Código da UF quando mora na capital, vazio fora dela</td></tr>
+            <tr><td class="mono">IDADE · SEXO · COR_RACA · ESCOLARIDADE</td><td class="mono">A002 · A003 · A004 · A005</td><td>Perfil do morador</td></tr>
+            <tr><td class="mono">FAIXA_RENDIMENTO</td><td class="mono">C01011</td><td>Faixa do rendimento em dinheiro (00 a 09)</td></tr>
+            <tr><td class="mono">ATENDIMENTO_SUS</td><td class="mono">B0042</td><td>Buscou pronto socorro do SUS/UPA</td></tr>
+            <tr><td class="mono">INTERNADO</td><td class="mono">B005</td><td>Ficou internado</td></tr>
+            <tr><td class="mono">SINTOMA_* (12)</td><td class="mono">B0011 a B00112</td><td>Febre, tosse, garganta, respiração, cabeça, peito, náusea, nariz, fadiga, olhos, cheiro/sabor, muscular</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Estrela do Data Warehouse</h3>
+      <div class="estrela">
+        <div class="tab-dw">
+          <header>dw.dim_tempo</header>
+          <ul>
+            <li class="pk"><span>sk_tempo</span><span>INT PK</span></li>
+            <li><span>nu_ano</span><span>INT</span></li>
+            <li class="extra"><span>nu_mes</span><span>INT</span></li>
+            <li><span>no_mes</span><span>VARCHAR(20)</span></li>
+          </ul>
+        </div>
+        <div class="tab-dw fato">
+          <header>dw.fato_pnad_covid</header>
+          <ul>
+            <li class="pk"><span>sk_tempo</span><span>FK</span></li>
+            <li class="pk"><span>sk_municipio</span><span>FK</span></li>
+            <li class="pk"><span>sk_pessoa</span><span>FK</span></li>
+            <li class="extra"><span>qt_pessoas</span><span>INT</span></li>
+            <li><span>atendimento_SUS</span><span>INT</span></li>
+            <li><span>internado</span><span>INT</span></li>
+            <li><span>sintoma</span><span>INT</span></li>
+          </ul>
+        </div>
+        <div class="tab-dw">
+          <header>dw.dim_municipio</header>
+          <ul>
+            <li class="pk"><span>sk_municipio</span><span>INT PK</span></li>
+            <li><span>sg_uf</span><span>CHAR(2)</span></li>
+            <li><span>no_municipio</span><span>VARCHAR(150)</span></li>
+          </ul>
+        </div>
+        <div class="tab-dw">
+          <header>dw.dim_pessoa</header>
+          <ul>
+            <li class="pk"><span>sk_pessoa</span><span>INT PK</span></li>
+            <li><span>cor_raca</span><span>VARCHAR(25)</span></li>
+            <li><span>sexo</span><span>CHAR(1)</span></li>
+            <li><span>faixa_etaria</span><span>VARCHAR(25)</span></li>
+            <li><span>escolaridade</span><span>VARCHAR(50)</span></li>
+            <li><span>faixa_rendimento</span><span>VARCHAR(25)</span></li>
+          </ul>
+        </div>
+      </div>
+      <p class="legenda">Grão da fato: mês × município × perfil de pessoa. <b>+</b> marca colunas acrescentadas ao enunciado (motivo em Decisões).</p>
+    </div>
+  </section>
+
+  <section id="rotinas">
+    <div class="wrap">
+      <h2>Functions e procedures</h2>
+      <p class="sub">O SQL Server não tem PACKAGE. O schema <code>etl</code> cumpre esse papel e agrupa todas as rotinas do processo.</p>
+
+      <h3>Procedures</h3>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Procedure</th><th>Responsabilidade</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">etl.usp_carregar</td><td>Lê o CSV com BULK INSERT, localiza as colunas pelo cabeçalho, valida, grava válidas na staging e inválidas em <code>staging.pnad_covid_rejeitado</code>. Reprocessar um mês substitui o anterior.</td></tr>
+            <tr><td class="mono">etl.usp_carregar_dim_tempo</td><td>Combinações únicas de ano e mês, com o nome do mês, sem duplicar.</td></tr>
+            <tr><td class="mono">etl.usp_carregar_dim_municipio</td><td>Traduz o código da capital, normaliza o nome e insere só os novos. Quem mora fora da capital vai para "Demais Municipios" da UF.</td></tr>
+            <tr><td class="mono">etl.usp_carregar_dim_pessoa</td><td>Faixa etária, sexo em M/F e descrições de cor/raça, escolaridade e rendimento pelas functions. Insere só perfis novos.</td></tr>
+            <tr><td class="mono">etl.usp_carregar_fato</td><td>Resolve as chaves, agrega as métricas e deixa fora da fato (e no log) qualquer linha sem chave. FKs garantem a integridade.</td></tr>
+            <tr><td class="mono">etl.usp_executar_pipeline</td><td>Roda as etapas na ordem e registra em qual etapa parou, se parar.</td></tr>
+            <tr><td class="mono">etl.usp_limpar_carga</td><td>Esvazia staging, dimensões e fato para o teste. O log fica.</td></tr>
+            <tr><td class="mono">auditoria.usp_log_*</td><td>Abrem e fecham a linha de log fora da transação, para o erro ficar registrado mesmo com ROLLBACK.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Functions</h3>
+      <div class="tabela">
+        <table>
+          <thead><tr><th>Grupo</th><th>Functions</th></tr></thead>
+          <tbody>
+            <tr><td>Normalização textual</td><td><code>fn_remover_espacos_extras</code> <code>fn_remover_acentos</code> <code>fn_capitular</code> <code>fn_normalizar_texto</code></td></tr>
+            <tr><td>Território</td><td><code>fn_nome_uf</code> <code>fn_sigla_uf</code> <code>fn_nome_municipio</code> <code>fn_normalizar_nome_municipio</code> <code>fn_municipio_dw</code></td></tr>
+            <tr><td>Pessoa</td><td><code>fn_descricao_sexo</code> <code>fn_sigla_sexo</code> <code>fn_cor_raca</code> <code>fn_escolaridade</code> <code>fn_faixa_etaria</code> <code>fn_faixa_rendimento</code></td></tr>
+            <tr><td>Saúde</td><td><code>fn_atendimento_sus</code> <code>fn_internado</code> <code>fn_sintoma</code> <code>fn_teve_sintoma</code></td></tr>
+            <tr><td>Tempo</td><td><code>fn_nome_mes</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Validações da carga</h3>
+      <p>Uma linha é rejeitada quando não dá para separar os campos, quando ano ou mês faltam ou o mês está fora de 1 a 12, quando a UF não existe, quando a idade falta ou passa de 0 a 130, quando o sexo não é 1 ou 2, quando a capital informada não é a da UF, ou quando um campo de código traz texto. O motivo fica gravado junto da linha original.</p>
+      <div class="status" aria-label="Status do log">
+        <span class="pill ok"><i></i>SUCESSO <span>todas as linhas lidas gravadas</span></span>
+        <span class="pill warn"><i></i>SUCESSO PARCIAL <span>parte rejeitada</span></span>
+        <span class="pill err"><i></i>ERRO <span>nada gravado ou falha</span></span>
+      </div>
+    </div>
+  </section>
+
+  <section id="executar">
+    <div class="wrap">
+      <h2>Como executar</h2>
+      <p class="sub">Precisa de Docker e Git. Escolha o terminal que vai usar em casa.</p>
+      <div class="abas" role="tablist" aria-label="Sistema">
+        <button type="button" role="tab" id="aba-ps" aria-selected="true" aria-controls="painel-ps">Windows (PowerShell)</button>
+        <button type="button" role="tab" id="aba-sh" aria-selected="false" aria-controls="painel-sh">Linux, macOS, Git Bash</button>
+      </div>
+
+      <div id="painel-ps" role="tabpanel" aria-labelledby="aba-ps">
+        <ol class="passos">
+          <li><div><h4>Configurar e subir o SQL Server</h4><p>Copie o .env e, se quiser, troque a senha.</p>
+            <div class="terminal"><pre>Copy-Item .env.example .env
+docker compose up -d</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+          <li><div><h4>Criar banco, tabelas, functions e procedures</h4><p>Pode rodar de novo sempre que mudar um .sql.</p>
+            <div class="terminal"><pre>.\scripts\instalar.ps1</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+          <li><div><h4>Testar com o CSV pequeno</h4><p>Carrega 19 linhas (7 inválidas de propósito) e confere 28 resultados esperados.</p>
+            <div class="terminal"><pre>.\scripts\testar.ps1</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+          <li><div><h4>Baixar os microdados e carregar tudo</h4><p>Cerca de 80 MB compactados. Use <code>-Meses 05</code> para baixar só um mês.</p>
+            <div class="terminal"><pre>.\scripts\baixar_dados.ps1
+.\scripts\executar_pipeline.ps1</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+        </ol>
+      </div>
+
+      <div id="painel-sh" role="tabpanel" aria-labelledby="aba-sh" hidden>
+        <ol class="passos">
+          <li><div><h4>Configurar e subir o SQL Server</h4><p>Copie o .env e, se quiser, troque a senha.</p>
+            <div class="terminal"><pre>cp .env.example .env
+docker compose up -d</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+          <li><div><h4>Criar banco, tabelas, functions e procedures</h4><p>Pode rodar de novo sempre que mudar um .sql.</p>
+            <div class="terminal"><pre>./scripts/instalar.sh</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+          <li><div><h4>Testar com o CSV pequeno</h4><p>Carrega 19 linhas (7 inválidas de propósito) e confere 28 resultados esperados.</p>
+            <div class="terminal"><pre>./scripts/testar.sh</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+          <li><div><h4>Baixar os microdados e carregar tudo</h4><p>Cerca de 80 MB compactados. Passe <code>05</code> para baixar só um mês.</p>
+            <div class="terminal"><pre>./scripts/baixar_dados.sh
+./scripts/executar_pipeline.sh</pre><button class="copiar" type="button">Copiar</button></div></div></li>
+        </ol>
+      </div>
+
+      <h3>Conectar pelo SSMS ou Azure Data Studio</h3>
+      <p>Servidor <code>localhost,1433</code>, usuário <code>sa</code>, a senha do <code>.env</code> e "confiar no certificado do servidor" marcado. Para um SQL Server instalado direto no Windows, rode os .sql de <code>sql/</code> na ordem e chame <code>etl.usp_carregar</code> com o caminho do CSV no seu disco.</p>
+    </div>
+  </section>
+
+  <section id="evidencias">
+    <div class="wrap">
+      <h2>Roteiro de evidências</h2>
+      <p class="sub">Um print por item. As consultas estão em <code>sql/07_consultas/01_evidencias.sql</code>, com os mesmos códigos.</p>
+      <ul class="checklist">
+        <li><span class="cod">E01</span><span>Container rodando<span class="o"><code>docker compose ps</code> com status healthy</span></span></li>
+        <li><span class="cod">E02</span><span>Instalação concluída<span class="o">Saída do instalar com os 15 scripts</span></span></li>
+        <li><span class="cod">E03</span><span>Objetos por schema<span class="o">Tabelas, views, functions e procedures criadas</span></span></li>
+        <li><span class="cod">E04</span><span>Normalização textual<span class="o">Antes e depois de cada function</span></span></li>
+        <li><span class="cod">E05</span><span>Log de execução<span class="o">Lidas, gravadas, status e observação de cada etapa</span></span></li>
+        <li><span class="cod">E06</span><span>Staging carregada<span class="o">Linhas por competência</span></span></li>
+        <li><span class="cod">E07</span><span>Rejeitadas<span class="o">Motivos e quantidades</span></span></li>
+        <li><span class="cod">E08</span><span>Dimensões<span class="o">Conteúdo e contagens</span></span></li>
+        <li><span class="cod">E09</span><span>Fato reconciliada<span class="o">Totais da fato iguais aos da staging</span></span></li>
+        <li><span class="cod">E10</span><span>Integridade referencial<span class="o">Órfãos zerados e FKs ativas</span></span></li>
+        <li><span class="cod">E11</span><span>Teste automatizado<span class="o">Saída do testar com as 28 verificações OK</span></span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="decisoes">
+    <div class="wrap">
+      <h2>Decisões</h2>
+      <p class="sub">Pontos em que o projeto interpreta ou complementa o enunciado.</p>
+      <div class="decisoes">
+        <div><h4>Staging no SQL Server</h4><p>O diagrama mostra Oracle, mas a disciplina é SQL Server. O staging virou um schema do mesmo banco, o que evita linked server.</p></div>
+        <div><h4>Perfis na dim_pessoa</h4><p>A PNAD não identifica a pessoa. A dimensão guarda combinações únicas de atributos e a fato soma quantas pessoas há em cada uma.</p></div>
+        <div><h4>Município a partir de CAPITAL</h4><p>O microdado só identifica a capital. Quem mora no interior entra como "Demais Municipios" da UF, sem perder a linha.</p></div>
+        <div><h4>Colunas acrescentadas</h4><p><code>nu_mes</code> ordena e liga a dim_tempo. <code>qt_pessoas</code> dá a base dos percentuais. <code>ID_LOG</code> na staging liga cada linha à carga que a gravou.</p></div>
+        <div><h4>Sem peso amostral</h4><p>As métricas contam entrevistados. Para estimar a população seria preciso usar o peso V1032.</p></div>
+        <div><h4>Leitura por nome de coluna</h4><p>O cabeçalho define a posição de cada campo. Arquivos de meses diferentes carregam sem mudar código.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Dhionathan Lanzoni Jobim · MBA em Engenharia de Dados, PUC Minas</span>
+    <span>Fonte: microdados PNAD Covid-19, IBGE</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Abas Windows / Linux
+  var abas = document.querySelectorAll('.abas [role="tab"]');
+  function ativar(aba) {
+    abas.forEach(function (a) {
+      var sel = a === aba;
+      a.setAttribute('aria-selected', sel ? 'true' : 'false');
+      document.getElementById(a.getAttribute('aria-controls')).hidden = !sel;
+    });
+    try { localStorage.setItem('pnad-aba', aba.id); } catch (e) {}
+  }
+  abas.forEach(function (a) { a.addEventListener('click', function () { ativar(a); }); });
+  try {
+    var salva = localStorage.getItem('pnad-aba');
+    if (salva && document.getElementById(salva)) ativar(document.getElementById(salva));
+  } catch (e) {}
+
+  // Copiar comandos
+  document.querySelectorAll('.copiar').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var pre = btn.parentElement.querySelector('pre');
+      var texto = pre.innerText;
+      function feito(msg) { btn.textContent = msg; setTimeout(function () { btn.textContent = 'Copiar'; }, 1600); }
+      function selecionar() {
+        var r = document.createRange(); r.selectNodeContents(pre);
+        var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+        feito('Selecionado');
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto).then(function () { feito('Copiado'); }, selecionar);
+      } else { selecionar(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
