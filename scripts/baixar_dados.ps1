@@ -1,4 +1,4 @@
-# Baixa os microdados da PNAD Covid-19 do FTP do IBGE e extrai os CSVs em dados\.
+﻿# Baixa os microdados da PNAD Covid-19 do FTP do IBGE e extrai os CSVs em dados\.
 # Uso:
 #   .\scripts\baixar_dados.ps1                  # todos os meses (05 a 11 de 2020)
 #   .\scripts\baixar_dados.ps1 -Meses 05,06     # só os meses informados

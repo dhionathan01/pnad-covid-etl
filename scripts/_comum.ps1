@@ -1,4 +1,4 @@
-# Funções compartilhadas pelos scripts .ps1
+﻿# Funções compartilhadas pelos scripts .ps1
 # Carregado com: . "$PSScriptRoot\_comum.ps1"
 
 $ErrorActionPreference = 'Stop'

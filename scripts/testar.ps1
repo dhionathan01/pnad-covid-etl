@@ -1,4 +1,4 @@
-# Teste de ponta a ponta com o CSV pequeno de tests\dados.
+﻿# Teste de ponta a ponta com o CSV pequeno de tests\dados.
 # ATENÇÃO: limpa staging, dimensões e fato antes (o log é mantido).
 # Uso: .\scripts\testar.ps1
 

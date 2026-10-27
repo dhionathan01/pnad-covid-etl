@@ -1,4 +1,4 @@
-# Cria (ou atualiza) banco, schemas, tabelas, functions e procedures.
+﻿# Cria (ou atualiza) banco, schemas, tabelas, functions e procedures.
 # Uso: .\scripts\instalar.ps1
 
 . "$PSScriptRoot\_comum.ps1"

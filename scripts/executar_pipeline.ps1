@@ -1,4 +1,4 @@
-# Executa o ETL completo (CSV -> staging -> dimensões -> fato) e mostra o log.
+﻿# Executa o ETL completo (CSV -> staging -> dimensões -> fato) e mostra o log.
 # Uso: .\scripts\executar_pipeline.ps1
 
 . "$PSScriptRoot\_comum.ps1"
