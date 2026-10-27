@@ -1,0 +1,7 @@
+# Scripts bash precisam de LF mesmo quando o repositório é clonado no Windows.
+*.sh   text eol=lf
+*.ps1  text eol=crlf
+*.sql  text eol=lf
+
+# O CSV de teste tem CRLF de propósito (imita o arquivo do IBGE). Não converter.
+tests/dados/*.csv binary

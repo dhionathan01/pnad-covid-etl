@@ -1,0 +1,29 @@
+# Ambiente do projeto: um SQL Server 2022 (Developer) em container.
+# A pasta ./dados é montada somente leitura para o BULK INSERT enxergar os CSVs,
+# e ./sql é montada para o sqlcmd do container executar os scripts.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pnad-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?defina MSSQL_SA_PASSWORD no arquivo .env}
+      TZ: America/Sao_Paulo
+    ports:
+      - "${MSSQL_PORTA:-1433}:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+      - ./dados:/var/opt/mssql/dados:ro
+      - ./tests/dados:/var/opt/mssql/dados_teste:ro
+      - ./sql:/sql:ro
+      - ./tests/sql:/sql_testes:ro
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+volumes:
+  mssql_data:

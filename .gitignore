@@ -1,0 +1,13 @@
+# Segredos locais
+.env
+
+# Microdados baixados do IBGE (pesados, ficam fora do git)
+dados/*
+!dados/.gitkeep
+!dados/README.md
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/
+*.bak
