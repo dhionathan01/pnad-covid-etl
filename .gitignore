@@ -11,3 +11,8 @@ dados/*
 Thumbs.db
 .vscode/
 *.bak
+
+# Ambiente do notebook
+.venv/
+.ipynb_checkpoints/
+__pycache__/

@@ -1,0 +1,7 @@
+# Ambiente do notebook (criado por scripts/criar_venv.sh ou .ps1)
+jupyterlab>=4.2,<5
+ipykernel>=6.29,<8
+pandas>=2.2,<4
+matplotlib>=3.9,<4
+pymssql>=2.3,<3
+python-dotenv>=1.0,<2

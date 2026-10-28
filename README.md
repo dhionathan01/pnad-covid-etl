@@ -34,6 +34,7 @@ pnad-covid-etl/
 │   ├── 05_procedures_dw/     cargas das dimensões e da fato
 │   ├── 06_orquestracao/      pipeline completo e limpeza
 │   └── 07_consultas/         consultas para evidências e análises
+├── notebooks/                notebook explicativo, módulos de apoio e requirements
 ├── tests/                    CSV de teste, gerador e verificações
 └── docs/                     documentação e roteiro de prints
 ```
@@ -90,6 +91,25 @@ SELECT * FROM auditoria.log_execucao ORDER BY id_log DESC;
 ```
 
 Com SQL Server instalado direto no Windows (sem Docker), rode os arquivos de `sql/` na ordem numérica e passe o caminho do CSV no seu disco, por exemplo `N'C:\pnad\dados\PNAD_COVID_052020.csv'`. O serviço do SQL Server precisa ter permissão de leitura nessa pasta.
+
+## Notebook explicativo
+
+`notebooks/pnad_covid_etl.ipynb` percorre o projeto em 15 partes, na ordem em que ele foi construído. Cada parte explica a decisão e executa o SQL do repositório contra o container, com as saídas no visual da identidade (tabelas, status do log, diagrama e gráficos).
+
+Precisa de Python 3.10 ou mais novo. Com o container de pé:
+
+```bash
+./scripts/criar_venv.sh                     # Windows: .\scripts\criar_venv.ps1
+source .venv/bin/activate                   # Windows: .\.venv\Scripts\Activate.ps1
+jupyter lab notebooks/pnad_covid_etl.ipynb
+```
+
+No VS Code basta abrir o `.ipynb` e escolher o kernel **PNAD Covid (venv)**. O notebook instala os objetos sozinho (não precisa rodar `instalar` antes), roda o teste com o CSV pequeno e deixa a carga dos dados reais do IBGE atrás de uma variável (`CARREGAR_DADOS_REAIS`).
+
+| Pasta | Conteúdo |
+|-------|----------|
+| `notebooks/apoio/banco.py` | conexão (pymssql, sem precisar de driver ODBC) e execução dos `.sql` separando os `GO` |
+| `notebooks/apoio/identidade.py` | cores, fonte, logo e gráficos com os tokens de `@lifehub/ui` |
 
 ## O que cada rotina faz
 
