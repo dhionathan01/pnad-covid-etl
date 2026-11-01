@@ -26,5 +26,6 @@ Write-Host ">> Registrando o kernel 'PNAD Covid (venv)'"
 Write-Host ''
 Write-Host 'Pronto. Para abrir o notebook:'
 Write-Host '  .\.venv\Scripts\Activate.ps1'
-Write-Host '  jupyter lab notebooks\pnad_covid_etl.ipynb'
-Write-Host "No VS Code, abra o .ipynb e escolha o kernel 'PNAD Covid (venv)'."
+Write-Host '  jupyter lab pnad_covid_etl.ipynb'
+Write-Host 'No VS Code: feche e abra o VS Code de novo (ou Ctrl+Shift+P > Developer: Reload Window),'
+Write-Host "abra pnad_covid_etl.ipynb e escolha o kernel 'PNAD Covid (venv)'."

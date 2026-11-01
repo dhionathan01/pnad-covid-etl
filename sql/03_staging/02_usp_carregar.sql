@@ -17,8 +17,9 @@
      ERRO ............ nenhuma linha gravada ou falha na execução
 
    Por que OPENJSON para quebrar a linha?
-     "2020,11,11,,1" vira o array JSON ["2020","11","11","","1"] e o OPENJSON
-     devolve cada posição como coluna numa única passada pela linha. É bem mais
+     "2020,11,11,,1" vira o array JSON ["2020","11","11","","1"], que vai
+     embrulhado em [[...]], e o OPENJSON ... WITH ('$[0]', '$[6]'...) devolve
+     cada posição como coluna numa única passada pela linha. É bem mais
      rápido que STRING_SPLIT para arquivos com centenas de milhares de linhas
      e funciona a partir do SQL Server 2016.
 
@@ -153,12 +154,17 @@ BEGIN
         -- Linha que não vira JSON válido (caractere estranho, aspas quebradas)
         -- passa um array vazio para o OPENJSON: os campos ficam NULL e a
         -- validação rejeita a linha como "mal formada", sem derrubar a carga.
+        -- O array da linha vai dentro de outro array ([[...]]): OPENJSON sobre
+        -- um array devolve uma linha por elemento, então o externo precisa ter
+        -- um elemento só para '$[n]' apontar para a posição n da linha.
+        -- COLLATE BIN2 no REPLACE: comparar byte a byte é muito mais rápido que
+        -- pela collation CI_AI da coluna, e aqui não há acento a comparar.
         SET @sql = N'
 INSERT INTO #brutas (nu_linha, fl_linha_valida, ' + @colunas_insert + N')
 SELECT b.id_linha, CAST(ISJSON(x.ds_json) AS BIT), j.*
 FROM staging.csv_bruto AS b
-CROSS APPLY (SELECT ds_json = ''["'' + REPLACE(REPLACE(REPLACE(b.ds_linha, ''"'', ''''), CHAR(13), ''''), @sep, ''","'') + ''"]'') AS x
-OUTER APPLY OPENJSON(CASE WHEN ISJSON(x.ds_json) = 1 THEN x.ds_json ELSE ''[]'' END)
+CROSS APPLY (SELECT ds_json = ''["'' + REPLACE(REPLACE(REPLACE(b.ds_linha COLLATE Latin1_General_BIN2, ''"'', ''''), CHAR(13), ''''), @sep, ''","'') + ''"]'') AS x
+OUTER APPLY OPENJSON(CASE WHEN ISJSON(x.ds_json) = 1 THEN ''['' + x.ds_json + '']'' ELSE ''[]'' END)
      WITH (' + @colunas_with + N') AS j
 WHERE b.id_linha <> @id_cab
   AND LEN(REPLACE(b.ds_linha, CHAR(13), '''')) > 0;';

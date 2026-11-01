@@ -6,6 +6,67 @@ Processo de carga dos microdados da **PNAD Covid-19** (IBGE, maio a novembro de 
 
 A documentação completa, com diagrama, modelo e roteiro de evidências, está em [`docs/index.html`](docs/index.html) (abra no navegador).
 
+## Passo a passo para rodar (professor, comece aqui)
+
+O jeito mais simples de avaliar é pelo notebook **[`pnad_covid_etl.ipynb`](pnad_covid_etl.ipynb)**, na raiz do projeto. Ele cria o banco, as tabelas, as functions e as procedures, roda o teste automatizado e mostra cada resultado com a explicação ao lado.
+
+### 1. Instale (uma vez)
+
+| Programa | Observação |
+|----------|------------|
+| [Docker Desktop](https://www.docker.com/products/docker-desktop/) | precisa estar **aberto** (ícone da baleia "running") antes dos comandos abaixo |
+| [Python 3.10 ou mais novo](https://www.python.org/downloads/) | no instalador do Windows, marque *Add Python to PATH* |
+| [VS Code](https://code.visualstudio.com/) | com as extensões **Python** e **Jupyter** da Microsoft |
+
+### 2. Suba o SQL Server e crie o ambiente do notebook
+
+Abra um terminal **na pasta do projeto** (no VS Code: *Terminal → New Terminal*).
+
+**Windows (PowerShell):**
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d
+.\scripts\criar_venv.ps1
+```
+
+Se o PowerShell bloquear o script, rode antes `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` e tente de novo.
+
+**Linux, macOS ou Git Bash:**
+
+```bash
+cp .env.example .env
+docker compose up -d
+./scripts/criar_venv.sh
+```
+
+`docker compose up -d` baixa a imagem do SQL Server na primeira vez (~1,5 GB). Depois dele, espere uns 30 segundos até `docker compose ps` mostrar `(healthy)`. O `criar_venv` cria a pasta `.venv`, instala as bibliotecas e registra o kernel **PNAD Covid (venv)**.
+
+### 3. Reinicie o VS Code
+
+**Feche o VS Code e abra de novo** (ou `Ctrl+Shift+P` → *Developer: Reload Window*). Sem isso o VS Code não enxerga o kernel que acabou de ser criado.
+
+### 4. Rode o notebook
+
+1. Abra `pnad_covid_etl.ipynb`.
+2. Clique em **Select Kernel** (canto superior direito) e escolha **PNAD Covid (venv)**. Se ele não aparecer em *Jupyter Kernel*, procure o `.venv` do projeto em *Python Environments*.
+3. Clique em **Run All**. O notebook todo roda em menos de um minuto com o CSV de teste, e a parte 12 deve terminar com **28 de 28** verificações conferindo.
+
+### 5. (Opcional) Dados reais do IBGE
+
+Na parte 13 do notebook, troque `CARREGAR_DADOS_REAIS = False` para `True` e rode a célula. Ela baixa o mês escolhido em `MESES` (~10 MB por mês) e o carrega no banco em cerca de 1 minuto por mês. Depois rode a parte 14 para ver os gráficos com os dados reais.
+
+### Problemas comuns
+
+| Mensagem | O que fazer |
+|----------|-------------|
+| `open //./pipe/dockerDesktopLinuxEngine: The system cannot find the file specified` | o Docker Desktop não está aberto; abra, espere ficar "running" e rode `docker compose up -d` de novo |
+| `É preciso Python 3.10 ou mais novo.` | instale o Python 3.10+ e abra um terminal novo |
+| Kernel **PNAD Covid (venv)** não aparece | feche e abra o VS Code (passo 3) |
+| `Não consegui conectar` na parte 1 | o container ainda está subindo; confira `docker compose ps` e rode a célula de novo |
+
+Sem o notebook, os mesmos passos rodam só por scripts; veja [Como executar](#como-executar).
+
 ## Arquitetura
 
 ```
@@ -21,6 +82,7 @@ Tudo roda no SQL Server. O staging que o enunciado desenha no Oracle ficou no sc
 
 ```
 pnad-covid-etl/
+├── pnad_covid_etl.ipynb      notebook explicativo (ponto de partida)
 ├── docker-compose.yml        SQL Server 2022 Developer
 ├── .env.example              senha do sa e porta
 ├── dados/                    CSVs do IBGE (fora do git)
@@ -34,7 +96,7 @@ pnad-covid-etl/
 │   ├── 05_procedures_dw/     cargas das dimensões e da fato
 │   ├── 06_orquestracao/      pipeline completo e limpeza
 │   └── 07_consultas/         consultas para evidências e análises
-├── notebooks/                notebook explicativo, módulos de apoio e requirements
+├── notebooks/                módulos de apoio do notebook e requirements
 ├── tests/                    CSV de teste, gerador e verificações
 └── docs/                     documentação e roteiro de prints
 ```
@@ -94,17 +156,17 @@ Com SQL Server instalado direto no Windows (sem Docker), rode os arquivos de `sq
 
 ## Notebook explicativo
 
-`notebooks/pnad_covid_etl.ipynb` percorre o projeto em 15 partes, na ordem em que ele foi construído. Cada parte explica a decisão e executa o SQL do repositório contra o container, com as saídas no visual da identidade (tabelas, status do log, diagrama e gráficos).
+`pnad_covid_etl.ipynb` (na raiz) percorre o projeto em 15 partes, na ordem em que ele foi construído. Cada parte explica a decisão e executa o SQL do repositório contra o container, com as saídas no visual da identidade (tabelas, status do log, diagrama e gráficos).
 
 Precisa de Python 3.10 ou mais novo. Com o container de pé:
 
 ```bash
 ./scripts/criar_venv.sh                     # Windows: .\scripts\criar_venv.ps1
 source .venv/bin/activate                   # Windows: .\.venv\Scripts\Activate.ps1
-jupyter lab notebooks/pnad_covid_etl.ipynb
+jupyter lab pnad_covid_etl.ipynb
 ```
 
-No VS Code basta abrir o `.ipynb` e escolher o kernel **PNAD Covid (venv)**. O notebook instala os objetos sozinho (não precisa rodar `instalar` antes), roda o teste com o CSV pequeno e deixa a carga dos dados reais do IBGE atrás de uma variável (`CARREGAR_DADOS_REAIS`).
+No VS Code, depois do `criar_venv`, feche e abra o VS Code, abra o `.ipynb` e escolha o kernel **PNAD Covid (venv)** (detalhes no [passo a passo](#passo-a-passo-para-rodar-professor-comece-aqui)). O notebook instala os objetos sozinho (não precisa rodar `instalar` antes), roda o teste com o CSV pequeno e deixa a carga dos dados reais do IBGE atrás de uma variável (`CARREGAR_DADOS_REAIS`).
 
 | Pasta | Conteúdo |
 |-------|----------|
