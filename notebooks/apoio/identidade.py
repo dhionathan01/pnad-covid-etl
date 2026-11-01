@@ -176,7 +176,18 @@ def codigo(texto: str, rotulo: str = "") -> None:
 
 def diagrama_arquitetura() -> None:
     """Fluxo do projeto: CSV, staging, transformação, DW e log."""
+    _mostrar(f'<div class="dj"><div class="dj-rotulo">Arquitetura</div><div class="dj-diagrama">{svg_arquitetura()}</div></div>')
+
+
+def svg_arquitetura(fundo: bool = False) -> str:
+    """SVG do diagrama. Com fundo=True vira imagem autônoma (usada no README)."""
     c = COR
+    abertura = (
+        f'<svg viewBox="-20 12 940 232" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif">'
+        f'<rect x="-19.5" y="12.5" width="939" height="231" rx="14" fill="{c["fundo"]}" stroke="{c["borda"]}"/>'
+        if fundo else
+        '<svg viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, sans-serif">'
+    )
     caixa = lambda x, w, t1, t2, banco=False: (
         f'<rect x="{x}" y="40" width="{w}" height="64" rx="10" fill="{c["tinta"] if banco else c["card2"]}" '
         f'stroke="{c["marca"] if banco else c["borda"]}"/>'
@@ -184,9 +195,9 @@ def diagrama_arquitetura() -> None:
         f'<text x="{x + w / 2}" y="86" text-anchor="middle" fill="{c["suave"]}" font-size="10.5" font-family="JetBrains Mono, monospace">{t2}</text>'
     )
     seta = lambda x1, x2: f'<path d="M{x1} 72H{x2}" stroke="{c["marca"]}" stroke-width="1.6" fill="none" marker-end="url(#p)"/>'
-    svg = (
-        '<svg viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg" font-family="Inter, Segoe UI, sans-serif">'
-        f'<defs><marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">'
+    return (
+        abertura
+        + f'<defs><marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">'
         f'<path d="M0 0L10 5L0 10z" fill="{c["marca"]}"/></marker>'
         f'<marker id="pl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">'
         f'<path d="M0 0L10 5L0 10z" fill="{c["erro"]}"/></marker></defs>'
@@ -208,7 +219,6 @@ def diagrama_arquitetura() -> None:
         + f'<text x="205" y="145" text-anchor="middle" fill="{c["suave"]}" font-size="10.5" font-family="JetBrains Mono, monospace">pnad_covid_rejeitado</text>'
         + "</svg>"
     )
-    _mostrar(f'<div class="dj"><div class="dj-rotulo">Arquitetura</div><div class="dj-diagrama">{svg}</div></div>')
 
 
 def estilo_graficos() -> None:

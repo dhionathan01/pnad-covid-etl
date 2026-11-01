@@ -1,4 +1,6 @@
-# ETL PNAD Covid-19 → SQL Server
+<p align="center">
+  <img src="docs/img/capa.svg" alt="ETL PNAD Covid-19 em SQL Server, por Dhionathan Jobim" width="100%">
+</p>
 
 Atividade prática da disciplina **MS SQL Server Operação** (MBA em Engenharia de Dados, PUC Minas).
 
@@ -69,12 +71,9 @@ Sem o notebook, os mesmos passos rodam só por scripts; veja [Como executar](#co
 
 ## Arquitetura
 
-```
-CSV IBGE ──► Leitura e validação ──► Staging ──► Transformação e normalização ──► Data Warehouse
-               etl.usp_carregar      staging.*     functions etl.fn_*               dw.*
-                     │                   │                     │                       │
-                     └──────────── auditoria.log_execucao ◄────┴───────────────────────┘
-```
+<p align="center">
+  <img src="docs/img/arquitetura.svg" alt="CSV IBGE, leitura e validação (usp_carregar), staging, normalização (functions etl.fn_*), dimensões e fato, Data Warehouse; rejeitadas em pnad_covid_rejeitado e todas as etapas gravando em auditoria.log_execucao" width="100%">
+</p>
 
 Tudo roda no SQL Server. O staging que o enunciado desenha no Oracle ficou no schema `staging` do mesmo banco.
 
@@ -98,7 +97,7 @@ pnad-covid-etl/
 │   └── 07_consultas/         consultas para evidências e análises
 ├── notebooks/                módulos de apoio do notebook e requirements
 ├── tests/                    CSV de teste, gerador e verificações
-└── docs/                     documentação e roteiro de prints
+└── docs/                     documentação, roteiro de prints e imagens do README
 ```
 
 | Schema      | Papel |
@@ -172,6 +171,7 @@ No VS Code, depois do `criar_venv`, feche e abra o VS Code, abra o `.ipynb` e es
 |-------|----------|
 | `notebooks/apoio/banco.py` | conexão (pymssql, sem precisar de driver ODBC) e execução dos `.sql` separando os `GO` |
 | `notebooks/apoio/identidade.py` | cores, fonte, logo e gráficos com os tokens de `@lifehub/ui` |
+| `docs/gerar_imagens.py` | gera as imagens deste README (`docs/img/*.svg`) a partir de `identidade.py` |
 
 ## O que cada rotina faz
 
@@ -250,3 +250,9 @@ O roteiro dos prints está em [`docs/evidencias/README.md`](docs/evidencias/READ
 ## Fonte
 
 Microdados PNAD Covid-19, IBGE: https://ftp.ibge.gov.br/Trabalho_e_Rendimento/Pesquisa_Nacional_por_Amostra_de_Domicilios_PNAD_COVID19/Microdados/Dados/
+
+<br>
+
+<p align="center">
+  <img src="docs/img/assinatura.svg" alt="Dhionathan Jobim, Engenharia de Dados" width="100%">
+</p>
